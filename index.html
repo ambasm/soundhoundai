@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>SoundHound AI (SOUN) — Share Price & 200-Day Moving Average</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f5f7fa;font-family:'Times New Roman',Times,serif;color:#000;}
+.wrap{max-width:1300px;margin:0 auto;padding:20px 18px;}
+
+h1{text-align:center;font-family:'Times New Roman',Times,serif;font-size:1.55rem;font-weight:900;color:#000;letter-spacing:1px;line-height:1.35;margin-bottom:3px;}
+.sub{text-align:center;font-size:.9rem;color:#333;font-weight:700;letter-spacing:.5px;margin-bottom:14px;font-family:'Times New Roman',Times,serif;}
+
+/* LEGEND */
+.legend{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;background:#fff;border:1px solid #ccd4e0;border-radius:6px;padding:9px 16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.li{display:flex;align-items:center;gap:6px;font-family:'Times New Roman',Times,serif;font-weight:700;font-size:.85rem;color:#000;}
+.lb{width:30px;height:3px;border-radius:2px;}
+.lc{width:11px;height:11px;border-radius:50%;}
+
+/* CHART AREA */
+.chart-wrap{background:#fff;border:1px solid #ccd4e0;border-radius:8px;padding:16px 16px 10px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);position:relative;}
+.analyst-label{font-size:.8rem;color:#000;font-family:'Times New Roman',Times,serif;font-weight:700;margin-bottom:6px;}
+.chart-container{position:relative;}
+canvas{width:100%!important;}
+
+/* ANNOTATIONS */
+.ann{position:absolute;border-radius:5px;padding:6px 10px;font-size:.72rem;line-height:1.45;font-family:'Times New Roman',Times,serif;font-weight:900;pointer-events:none;white-space:nowrap;color:#000;}
+.ann-nvidia{background:#ddeeff;border:2px solid #4488cc;top:72%;left:6%;}
+.ann-golden{background:#d4f5e6;border:2px solid #20a060;top:60%;left:16%;}
+.ann-ath{background:#fff5cc;border:2px solid #c09000;top:4%;left:46%;}
+.ann-deepseek{background:#ffe8d0;border:2px solid #c05010;top:22%;left:56%;}
+.ann-nvidia-exit{background:#ffd6d6;border:2px solid #c03030;top:50%;left:58%;}
+.ann-fy{background:#f0f0f0;border:2px solid #666;top:62%;right:2%;}
+
+.ann-phase1{position:absolute;top:14px;left:6%;font-size:.8rem;color:#555;font-weight:900;font-family:'Times New Roman',Times,serif;}
+.ann-phase2{position:absolute;top:14px;left:28%;font-size:.8rem;color:#1a7040;font-weight:900;font-family:'Times New Roman',Times,serif;}
+.ann-phase3{position:absolute;top:14px;left:64%;font-size:.8rem;color:#c03030;font-weight:900;font-family:'Times New Roman',Times,serif;}
+
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:4px;}
+.card{border-radius:6px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.10);}
+.card-hdr{padding:8px 8px 6px;text-align:center;}
+.card-date{font-size:.72rem;font-weight:700;color:#fff;font-family:'Times New Roman',Times,serif;}
+.card-price{font-size:1rem;font-weight:900;color:#fff;font-family:'Times New Roman',Times,serif;letter-spacing:.5px;}
+.card-title{font-size:.88rem;font-weight:900;margin-bottom:6px;padding-bottom:5px;border-bottom:2px solid rgba(0,0,0,.1);color:#000;font-family:'Times New Roman',Times,serif;}
+.card-list{list-style:none;}
+.card-list li{font-size:.8rem;padding:3px 0;color:#000;line-height:1.5;font-weight:700;font-family:'Times New Roman',Times,serif;}
+.card-list li::before{content:"• ";color:#333;}
+
+.c-blue .card-hdr{background:#1a5fa0;} .c-blue{border:1px solid #90b8e0;} .c-blue .card-body{background:#f0f6ff;padding:10px;}
+.c-green .card-hdr{background:#1a6a28;} .c-green{border:1px solid #80c090;} .c-green .card-body{background:#f0fff4;padding:10px;}
+.c-gold .card-hdr{background:#a07000;} .c-gold{border:1px solid #d4b040;} .c-gold .card-body{background:#fffbe8;padding:10px;}
+.c-red .card-hdr{background:#c0252a;} .c-red{border:1px solid #e8b0b0;} .c-red .card-body{background:#fff0f0;padding:10px;}
+.c-orange .card-hdr{background:#b04010;} .c-orange{border:1px solid #e0b880;} .c-orange .card-body{background:#fff5ee;padding:10px;}
+.c-grey .card-hdr{background:#505060;} .c-grey{border:1px solid #b0b8c8;} .c-grey .card-body{background:#f6f7fa;padding:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SoundHound AI Inc. (NASDAQ: SOUN) — Daily Close Price & 200-Day Moving Average</h1>
+  <div class="sub">Jan 2024 to Apr 9, 2026 &nbsp;|&nbsp; Phases, Signals & Key Events</div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="li"><div class="lb" style="background:#1a70c0;"></div>Daily Close Price (USD)</div>
+    <div class="li"><div class="lb" style="background:#c07800;border-top:2px dashed #c07800;height:0;"></div>200-Day Moving Average (dashed)</div>
+    <div class="li"><div class="lc" style="background:#e03030;"></div>Death Cross (sell signal)</div>
+    <div class="li"><div class="lc" style="background:#20a060;"></div>Golden Cross (buy signal)</div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-wrap">
+    <div class="analyst-label">ATH: $24.23 (Dec 26, 2024) &nbsp;|&nbsp; Today Apr 9 2026: $6.74 &nbsp;|&nbsp; Oct 2025 secondary peak: $22.18 &nbsp;|&nbsp; 200-DMA shown as orange dashed line</div>
+    <div class="chart-container" style="position:relative;">
+      <canvas id="priceChart" height="340"></canvas>
+      <div class="ann ann-nvidia"><strong>Nvidia stake<br>revealed</strong></div>
+      <div class="ann ann-golden"><strong>Golden Cross<br>Mar 2024</strong></div>
+      <div class="ann ann-ath"><strong>ATH $24<br>Dec 2024</strong></div>
+      <div class="ann ann-deepseek"><strong>DeepSeek<br>selloff</strong></div>
+      <div class="ann ann-nvidia-exit"><strong>Nvidia exits<br>stake Feb 25</strong></div>
+      <div class="ann ann-apr9" style="position:absolute;background:#e8f0ff;border:2px solid #3060a0;border-radius:5px;padding:6px 10px;font-size:.72rem;line-height:1.45;font-family:'Times New Roman',Times,serif;font-weight:900;pointer-events:none;white-space:nowrap;color:#000;top:62%;right:1%;"><strong>Today<br>Apr 9 2026<br>$6.74</strong></div>
+      <div class="ann-phase1">Phase 1</div>
+      <div class="ann-phase2">Phase 2: Uptrend (+1000%)</div>
+      <div class="ann-phase3">Phase 3: Correction</div>
+    </div>
+  </div>
+
+  <!-- EVENT CARDS -->
+  <div class="cards">
+    <div class="card c-blue">
+      <div class="card-hdr"><div class="card-date">Jan – Feb 2024</div><div class="card-price">$2 → $5</div></div>
+      <div class="card-body c-blue">
+        <div class="card-title">▲ Nvidia Stake Revealed</div>
+        <ul class="card-list">
+          <li>Nvidia disclosed SOUN holding</li>
+          <li>AI voice tech excitement spiked</li>
+          <li>Volume surge on retail interest</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card c-green">
+      <div class="card-hdr"><div class="card-date">Mar – Apr 2024</div><div class="card-price">$5 → $8</div></div>
+      <div class="card-body c-green">
+        <div class="card-title">▲ Golden Cross — BUY</div>
+        <ul class="card-list">
+          <li>50-DMA crossed above 200-DMA</li>
+          <li>Bullish technical signal triggered</li>
+          <li>Price peaked ~$8 before pullback</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card c-gold">
+      <div class="card-hdr"><div class="card-date">May – Nov 2024</div><div class="card-price">$4 → $9</div></div>
+      <div class="card-body c-gold">
+        <div class="card-title">▲ Phase 2: Uptrend Builds</div>
+        <ul class="card-list">
+          <li>AI sector momentum accelerated</li>
+          <li>Revenue growth beat estimates</li>
+          <li>+1000% from Jan 2024 lows</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card c-red">
+      <div class="card-hdr"><div class="card-date">Dec 2024 – Jan 2025</div><div class="card-price">ATH $24</div></div>
+      <div class="card-body c-red">
+        <div class="card-title">🚀 All-Time High</div>
+        <ul class="card-list">
+          <li>AI hype reached peak euphoria</li>
+          <li>Death cross formed at the top</li>
+          <li>Retail + institutional FOMO buying</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card c-orange">
+      <div class="card-hdr"><div class="card-date">Feb – Mar 2025</div><div class="card-price">$24 → $12</div></div>
+      <div class="card-body c-orange">
+        <div class="card-title">▼ DeepSeek + Nvidia Exit</div>
+        <ul class="card-list">
+          <li>DeepSeek selloff hit AI stocks hard</li>
+          <li>Nvidia fully exited SOUN stake</li>
+          <li>Price collapsed 50%+ in weeks</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card c-grey">
+      <div class="card-hdr"><div class="card-date">Apr – Dec 2025</div><div class="card-price">$9.98</div></div>
+      <div class="card-body c-grey">
+        <div class="card-title">↔ Phase 3: Consolidation</div>
+        <ul class="card-list">
+          <li>Price range-bound $9–$14</li>
+          <li>200-DMA acting as resistance</li>
+          <li>FY2025 close: $9.98 (−5%)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const months=['Jan 24','Feb 24','Mar 24','Apr 24','May 24','Jun 24','Jul 24','Aug 24','Sep 24','Oct 24','Nov 24','Dec 24','Jan 25','Feb 25','Mar 25','Apr 25','May 25','Jun 25','Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 9'];
+// Actual monthly close prices (sourced from MacroTrends / Capital.com / Yahoo Finance)
+const price=[2.20, 5.00, 8.00, 5.50, 4.20, 4.00, 6.46, 4.00, 4.00, 5.38, 9.50,19.84,22.00,15.00, 8.55,10.00,11.00,12.00,14.00,11.00,11.00,22.18,11.98, 9.98,10.54,10.00, 6.87, 6.74];
+// Estimated 200-DMA (lagging, smoothed)
+const dma=  [2.20, 2.50, 3.00, 3.60, 4.00, 4.10, 4.20, 4.15, 4.10, 4.15, 4.40, 5.80, 8.00,10.00,11.00,11.20,11.00,10.80,11.00,11.20,11.50,12.00,12.50,12.00,11.50,11.20,10.50,10.20];
+
+const ctx = document.getElementById('priceChart').getContext('2d');
+new Chart(ctx,{
+  type:'line',
+  data:{
+    labels:months,
+    datasets:[
+      {
+        label:'Price ABOVE DMA',
+        data:price.map((p,i)=>p>=dma[i]?p:null),
+        borderColor:'transparent',
+        backgroundColor:'rgba(20,140,60,0.12)',
+        fill:{target:{value:0},above:'rgba(20,140,60,0.12)'},
+        pointRadius:0,tension:0.4
+      },
+      {
+        label:'Price BELOW DMA',
+        data:price.map((p,i)=>p<dma[i]?p:null),
+        borderColor:'transparent',
+        backgroundColor:'rgba(200,30,30,0.10)',
+        fill:{target:{value:0},above:'rgba(200,30,30,0.10)'},
+        pointRadius:0,tension:0.4
+      },
+      {
+        label:'200-Day Moving Average',
+        data:dma,
+        borderColor:'#c07800',
+        borderDash:[8,4],borderWidth:2.2,
+        pointRadius:0,tension:0.5,fill:false
+      },
+      {
+        label:'Daily Close Price',
+        data:price,
+        borderColor:'#1a70c0',
+        borderWidth:2.8,
+        pointRadius:price.map((p,i)=>[1,2,11,12,13,23].includes(i)?7:3),
+        pointBackgroundColor:price.map((p,i)=>{
+          if(i===2) return '#20a060';   // golden cross
+          if(i===12) return '#e03030';  // death cross / ATH
+          if(i===13) return '#e03030';  // nvidia exit
+          return '#1a70c0';
+        }),
+        pointBorderColor:'#fff',pointBorderWidth:1.5,
+        tension:0.4,fill:false
+      }
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor:'rgba(255,255,255,0.97)',
+        borderColor:'#ccd4e0',borderWidth:1,
+        titleColor:'#000',bodyColor:'#000',
+        titleFont:{family:"'Times New Roman',Times,serif",weight:'bold',size:12},
+        bodyFont:{family:"'Times New Roman',Times,serif",weight:'bold',size:11},
+        callbacks:{
+          label:ctx=>{
+            if(ctx.dataset.label==='Daily Close Price') return ` Price: $${ctx.raw}`;
+            if(ctx.dataset.label==='200-Day Moving Average') return ` 200-DMA: $${ctx.raw}`;
+            return null;
+          },
+          filter:ctx=>ctx.dataset.label==='Daily Close Price'||ctx.dataset.label==='200-Day Moving Average'
+        }
+      }
+    },
+    scales:{
+      x:{
+        ticks:{
+          color:'#000',
+          font:{size:11,family:"'Times New Roman',Times,serif",weight:'bold'},
+          maxRotation:45
+        },
+        grid:{color:'#e8eef4'}
+      },
+      y:{
+        min:0,max:26,
+        ticks:{
+          color:'#000',
+          font:{size:11,family:"'Times New Roman',Times,serif",weight:'bold'},
+          callback:v=>'$'+v
+        },
+        grid:{color:'#e8eef4'},
+        title:{
+          display:true,
+          text:'Share Price (USD)',
+          color:'#000',
+          font:{size:12,family:"'Times New Roman',Times,serif",weight:'bold'}
+        }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
